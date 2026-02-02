@@ -2,120 +2,167 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Xuân App 2026 - Bản Chạy Thử</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xuân App 2026 - Photo Booth</title>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background: #fff5f5; margin: 0; padding: 20px; }
-        .main-container { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        :root { --primary-red: #d32f2f; --gold: #ffd700; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff5f5; margin: 0; display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; }
         
-        /* Khung hiển thị */
-        #photo-booth { position: relative; width: 640px; height: 480px; border: 10px solid #d32f2f; border-radius: 15px; overflow: hidden; background: #000; }
+        header { background: var(--primary-red); color: white; width: 100%; text-align: center; padding: 15px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 20px; }
+        
+        /* Khu vực Camera */
+        #photo-container { position: relative; width: 640px; height: 480px; border: 8px solid var(--primary-red); border-radius: 15px; background: #000; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        canvas#overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        canvas#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
         
-        /* Nút bấm */
-        .menu { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .btn { padding: 12px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-        .btn-red { background: #d32f2f; color: white; }
-        .btn-gold { background: #ffc107; color: #333; }
-        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
+        /* Hiệu ứng đếm ngược */
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 120px; font-weight: bold; z-index: 10; display: none; text-shadow: 0 0 20px var(--primary-red); }
+
+        /* Bảng điều khiển */
+        .controls { width: 640px; background: white; padding: 25px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .group { margin-bottom: 20px; }
+        h3 { margin-top: 0; color: var(--primary-red); border-bottom: 2px solid #eee; padding-bottom: 10px; }
         
-        #countdown { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 120px; z-index: 20; display: none; text-shadow: 0 0 20px red; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 12px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: all 0.2s; }
+        .btn-theme { background: #f8f9fa; border: 1px solid #ddd; }
+        .btn-theme:hover { background: var(--gold); border-color: var(--gold); }
+        .btn-theme.active { background: var(--gold); border-color: var(--primary-red); }
+        
+        #capture-btn { width: 100%; background: var(--primary-red); color: white; font-size: 1.2em; margin-top: 10px; }
+        #capture-btn:hover { background: #b71c1c; transform: scale(1.02); }
+        #capture-btn:disabled { background: #ccc; }
+
+        input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 2px solid #eee; border-radius: 8px; font-size: 16px; }
+        input[type="text"]:focus { border-color: var(--primary-red); outline: none; }
     </style>
 </head>
 <body>
 
-    <h1 style="color: #d32f2f;">🏮 PHẦN MỀM CHỤP ẢNH TẾT 2026 🏮</h1>
+<header>
+    <h1>🏮 XUÂN APP 2026 - PHÒNG CHỤP ẢNH TẾT 🏮</h1>
+</header>
 
-    <div class="main-container">
-        <div id="photo-booth">
-            <video id="webcam" autoplay playsinline></video>
-            <canvas id="overlay-canvas" width="640" height="480"></canvas>
-            <div id="countdown">3</div>
-        </div>
+<div id="photo-container">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="overlay" width="640" height="480"></canvas>
+    <div id="countdown">3</div>
+</div>
 
-        <div class="menu">
-            <div style="margin-bottom: 15px;">
-                <strong>Chọn Phong Nền:</strong><br><br>
-                <button class="btn btn-gold" onclick="updateFrame('vn_toancanh')">VN: Hoa Đào Toàn Cảnh</button>
-                <button class="btn btn-gold" onclick="updateFrame('tq_avatar')">TQ: Khung Tròn Cổ Trang</button>
-                <button class="btn btn-gold" onclick="updateFrame('tq_toancanh')">TQ: Đèn Lồng Đỏ</button>
-            </div>
-            
-            <button class="btn btn-red" style="width: 100%; font-size: 1.2em;" onclick="captureSequence()">📸 CHỤP ẢNH NGAY</button>
+<div class="controls">
+    <div class="group">
+        <h3>1. Chọn Phong Nền (Theme)</h3>
+        <div class="btn-grid">
+            <button class="btn-theme active" onclick="setTheme('vn_toancanh', this)">Tết Việt (Toàn cảnh)</button>
+            <button class="btn-theme" onclick="setTheme('vn_avatar', this)">Tết Việt (Khung Avatar)</button>
+            <button class="btn-theme" onclick="setTheme('tq_toancanh', this)">Tết Trung Hoa (Toàn cảnh)</button>
+            <button class="btn-theme" onclick="setTheme('tq_avatar', this)">Tết Trung Hoa (Khung Avatar)</button>
         </div>
     </div>
 
-    <script>
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('overlay-canvas');
-        const ctx = canvas.getContext('2d');
-        const countdownDisplay = document.getElementById('countdown');
+    <div class="group">
+        <h3>2. Nhập Lời Chúc</h3>
+        <input type="text" id="user-text" placeholder="Ví dụ: Chúc mừng năm mới 2026 - Lớp 10A7">
+    </div>
 
-        // Danh sách link ảnh PNG trong suốt đã tìm được
-        const frames = {
-            'vn_toancanh': 'https://i.imgur.com/GiswT5X.png', // Cành đào/mai trang trí góc
-            'tq_avatar': 'https://i.imgur.com/vH9X0p0.png',   // Khung tròn họa tiết Trung Hoa
-            'tq_toancanh': 'https://i.imgur.com/mUnmCsc.png'  // Đèn lồng và rồng
+    <button id="capture-btn" onclick="startCapture()">📸 CHỤP ẢNH VÀ TẢI VỀ</button>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const ctx = overlay.getContext('2d');
+    const countdownEl = document.getElementById('countdown');
+    const captureBtn = document.getElementById('capture-btn');
+
+    // Các đường dẫn ảnh PNG trong suốt ổn định
+    const themes = {
+        'vn_toancanh': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Cherry_blossom_frame.png/640px-Cherry_blossom_frame.png',
+        'vn_avatar': 'https://www.pngmart.com/files/17/Circle-Floral-Frame-PNG-Photos.png',
+        'tq_toancanh': 'https://www.pngplay.com/wp-content/uploads/12/Chinese-New-Year-Lantern-PNG-Photos.png',
+        'tq_avatar': 'https://www.pngplay.com/wp-content/uploads/12/Chinese-Border-Transparent-Background.png'
+    };
+
+    let activeImage = new Image();
+    activeImage.crossOrigin = "anonymous";
+
+    // 1. Khởi động Webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => alert("Không thể truy cập camera: " + err));
+
+    // 2. Chức năng đổi Theme
+    function setTheme(key, btn) {
+        // Đổi trạng thái nút
+        document.querySelectorAll('.btn-theme').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Tải ảnh overlay
+        activeImage.src = themes[key];
+        activeImage.onload = () => {
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            ctx.drawImage(activeImage, 0, 0, overlay.width, overlay.height);
         };
+    }
 
-        let activeFrame = new Image();
-        activeFrame.crossOrigin = "anonymous";
+    // 3. Quy trình chụp ảnh
+    function startCapture() {
+        let timer = 3;
+        captureBtn.disabled = true;
+        countdownEl.style.display = 'block';
+        countdownEl.innerText = timer;
 
-        // Mở Camera
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => { video.srcObject = stream; })
-            .catch(err => alert("Lỗi mở camera: " + err));
+        const interval = setInterval(() => {
+            timer--;
+            countdownEl.innerText = timer;
+            if (timer === 0) {
+                clearInterval(interval);
+                countdownEl.style.display = 'none';
+                processFinalImage();
+                captureBtn.disabled = false;
+            }
+        }, 1000);
+    }
 
-        // Hàm đổi khung
-        function updateFrame(key) {
-            activeFrame.src = frames[key];
-            activeFrame.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(activeFrame, 0, 0, canvas.width, canvas.height);
-            };
+    // 4. Tổng hợp ảnh và tải về
+    function processFinalImage() {
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = 640;
+        finalCanvas.height = 480;
+        const fCtx = finalCanvas.getContext('2d');
+
+        // Vẽ lớp camera (Lật ngược để không bị mirror)
+        fCtx.translate(640, 0);
+        fCtx.scale(-1, 1);
+        fCtx.drawImage(video, 0, 0, 640, 480);
+        fCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+        // Vẽ lớp khung nền
+        fCtx.drawImage(overlay, 0, 0, 640, 480);
+
+        // Vẽ lời chúc
+        const text = document.getElementById('user-text').value;
+        if (text) {
+            fCtx.font = "bold 28px 'Segoe UI'";
+            fCtx.fillStyle = "#ffd700"; // Màu vàng gold
+            fCtx.textAlign = "center";
+            fCtx.shadowColor = "rgba(0,0,0,0.8)";
+            fCtx.shadowBlur = 5;
+            fCtx.fillText(text, 320, 450); // Vị trí dưới cùng giữa
         }
 
-        // Đếm ngược và chụp
-        function captureSequence() {
-            let count = 3;
-            countdownDisplay.style.display = 'block';
-            countdownDisplay.innerText = count;
+        // Tải ảnh
+        const link = document.createElement('a');
+        link.download = `Tet2026_Photo_${Date.now()}.png`;
+        link.href = finalCanvas.toDataURL('image/png');
+        link.click();
+    }
 
-            const interval = setInterval(() => {
-                count--;
-                countdownDisplay.innerText = count;
-                if (count === 0) {
-                    clearInterval(interval);
-                    countdownDisplay.style.display = 'none';
-                    doCapture();
-                }
-            }, 1000);
-        }
+    // Load theme mặc định
+    window.onload = () => {
+        setTheme('vn_toancanh', document.querySelector('.btn-theme'));
+    };
+</script>
 
-        function doCapture() {
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = 640;
-            finalCanvas.height = 480;
-            const fCtx = finalCanvas.getContext('2d');
-
-            // 1. Vẽ người (lật gương cho tự nhiên)
-            fCtx.translate(640, 0);
-            fCtx.scale(-1, 1);
-            fCtx.drawImage(video, 0, 0, 640, 480);
-            fCtx.setTransform(1, 0, 0, 1, 0, 0);
-
-            // 2. Vẽ khung đè lên
-            fCtx.drawImage(activeFrame, 0, 0, 640, 480);
-
-            // 3. Tự động tải về
-            const link = document.createElement('a');
-            link.download = 'AnhXuan2026.png';
-            link.href = finalCanvas.toDataURL('image/png');
-            link.click();
-        }
-
-        // Khởi tạo mặc định
-        updateFrame('vn_toancanh');
-    </script>
 </body>
 </html>
