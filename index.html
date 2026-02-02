@@ -2,37 +2,35 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Xuân App 2026 - Check-in Hồng Kông</title>
+    <title>Xuân App 2026 - Bản Siêu Mượt</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Arial, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
         #container { position: relative; width: 100vw; height: 100vh; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        video { display: none; } /* Ẩn video gốc để chỉ hiện canvas đã xử lý */
-
-        .controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; 
-                    background: rgba(0,0,0,0.6); padding: 20px; border-radius: 50px; display: flex; gap: 15px; backdrop-filter: blur(10px); box-shadow: 0 5px 20px rgba(0,0,0,0.4); }
-        button { padding: 15px 30px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; font-size: 1.1em; }
+        canvas { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+        video { display: none; }
         
-        .btn-modern { background: linear-gradient(45deg, #00c6ff, #0072ff); }
-        .btn-hongkong { background: linear-gradient(45deg, #d32f2f, #ff416c); }
-        .btn-snap { background: #ffd700; color: #333; font-size: 1.2em; box-shadow: 0 0 15px #ffd700; }
+        /* Hiệu ứng loading */
+        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: gold; z-index: 1000; font-weight: bold; text-align: center; }
         
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                    color: white; font-size: 180px; font-weight: bold; z-index: 200; display: none; text-shadow: 0 0 20px rgba(0,0,0,0.7); }
+        .ui { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 40px; }
+        button { padding: 12px 25px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-mode { background: #444; color: white; }
+        .btn-mode.active { background: #d32f2f; }
+        .btn-snap { background: #ffd700; color: #000; }
     </style>
 </head>
 <body>
 
 <div id="container">
+    <div id="loader">🚀 Đang khởi động AI...<br>(Vui lòng chờ vài giây)</div>
     <video id="video" autoplay playsinline></video>
     <canvas id="mainCanvas"></canvas>
-    <div id="countdown">3</div>
 
-    <div class="controls">
-        <button class="btn-modern" onclick="setMode('modern')">💎 HIỆN ĐẠI (BIỂN)</button>
-        <button class="btn-hongkong" onclick="setMode('hongkong')">🏮 HỒNG KÔNG ĐƯỜNG PHỐ</button>
-        <button class="btn-snap" onclick="startCapture()">📸 CHỤP TOÀN MÀN HÌNH</button>
+    <div class="ui">
+        <button id="btn-modern" class="btn-mode" onclick="changeMode('modern')">🌊 BIỂN</button>
+        <button id="btn-hongkong" class="btn-mode active" onclick="changeMode('hongkong')">🏮 HONGKONG</button>
+        <button class="btn-snap" onclick="takeSnap()">📸 CHỤP ẢNH</button>
     </div>
 </div>
 
@@ -40,88 +38,70 @@
     const video = document.getElementById('video');
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
-    let currentMode = 'modern';
+    const loader = document.getElementById('loader');
+    let currentMode = 'hongkong';
 
-    // Tải ảnh nền chất lượng cao
-    const bgBeach = new Image();
-    bgBeach.src = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&auto=format&fit=crop&q=80'; // Ảnh biển
-    const bgHongKong = new Image();
-    bgHongKong.src = 'https://images.unsplash.com/photo-1596541539266-9b81e8f3d611?w=1920&auto=format&fit=crop&q=80'; // Ảnh đường phố Hồng Kông
+    const bgImages = {
+        modern: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1280',
+        hongkong: 'https://images.unsplash.com/photo-1596541539266-9b81e8f3d611?w=1280'
+    };
 
-    // Cấu hình AI MediaPipe Selfie Segmentation
-    const selfieSegmentation = new SelfieSegmentation({
+    const imgBeach = new Image(); imgBeach.src = bgImages.modern;
+    const imgHK = new Image(); imgHK.src = bgImages.hongkong;
+
+    const selfie = new SelfieSegmentation({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
     });
-    selfieSegmentation.setOptions({ modelSelection: 1 }); // 0 cho nhanh, 1 cho chất lượng cao
-    selfieSegmentation.onResults(onResults);
 
-    // Mở Camera chất lượng cao nhất có thể
-    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } } })
+    // Model 0 giúp app CHẠY MƯỢT HƠN trên máy yếu
+    selfie.setOptions({ modelSelection: 0 }); 
+    selfie.onResults(onResults);
+
+    navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } })
         .then(stream => {
             video.srcObject = stream;
             video.onloadeddata = () => {
-                // Đảm bảo video đã tải đủ dữ liệu trước khi gửi tới AI
-                selfieSegmentation.send({image: video});
+                loader.style.display = 'none';
+                sendToAI();
             };
-        }).catch(error => {
-            console.error("Lỗi khi truy cập camera:", error);
-            alert("Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập!");
         });
 
+    function sendToAI() {
+        selfie.send({image: video});
+        requestAnimationFrame(sendToAI);
+    }
+
     function onResults(results) {
-        // Cập nhật kích thước canvas theo cửa sổ trình duyệt
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
         ctx.save();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // BƯỚC 1: Vẽ phần người đã được tách nền
+        // Vẽ người lật gương
         ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1); // Lật gương để ảnh hiển thị đúng
-        ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height); // Vẽ mask để định hình người
+        ctx.scale(-1, 1);
+        ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height);
         
-        ctx.globalCompositeOperation = 'source-in'; // Chỉ giữ lại phần hình ảnh nằm trong mask
-        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height); // Vẽ hình ảnh người
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
         
-        // BƯỚC 2: Vẽ nền (chèn vào phía sau phần người)
-        ctx.globalCompositeOperation = 'destination-over'; 
-        const bg = currentMode === 'modern' ? bgBeach : bgHongKong;
-        ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+        // Vẽ nền
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.drawImage(currentMode === 'modern' ? imgBeach : imgHK, 0, 0, canvas.width, canvas.height);
         
-        ctx.restore(); // Khôi phục trạng thái canvas
-        ctx.globalCompositeOperation = 'source-over'; // Đặt lại chế độ vẽ
-
-        // Tiếp tục gửi frame video tới AI để xử lý liên tục
-        requestAnimationFrame(() => selfieSegmentation.send({image: video}));
+        ctx.restore();
     }
 
-    // Chức năng đổi chế độ (Biển hoặc Hồng Kông)
-    function setMode(mode) { 
-        currentMode = mode; 
-        // Force re-render để cập nhật nền ngay lập tức
-        if(video.srcObject) {
-            selfieSegmentation.send({image: video});
-        }
+    function changeMode(m) {
+        currentMode = m;
+        document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${m}`).classList.add('active');
     }
 
-    // Chức năng đếm ngược và chụp ảnh
-    function startCapture() {
-        let timer = 3;
-        const cd = document.getElementById('countdown');
-        cd.style.display = 'block';
-        const interval = setInterval(() => {
-            timer--;
-            cd.innerText = timer;
-            if(timer === 0) {
-                clearInterval(interval);
-                cd.style.display = 'none';
-                const link = document.createElement('a');
-                link.download = `Checkin_Xuan2026_${currentMode}.png`;
-                link.href = canvas.toDataURL(); // Lấy ảnh từ canvas đã xử lý
-                link.click();
-            }
-        }, 1000);
+    function takeSnap() {
+        const link = document.createElement('a');
+        link.download = 'Checkin_2026.png';
+        link.href = canvas.toDataURL();
+        link.click();
     }
 </script>
 </body>
