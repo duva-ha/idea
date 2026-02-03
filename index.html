@@ -2,165 +2,70 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>ĐẠI TIỆC TẤT NIÊN - GIVISO MEGA LUCK</title>
+    <title>ĐIỀU PHỐI TẤT NIÊN 2025 - XUÂN BÍNH NGỌ 2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        :root {
-            --gold: #ffeb3b;
-            --bright-gold: #fff176;
-            --red-bg: #8b0000;
-            --dark-red: #4a0000;
-            --glass: rgba(0, 0, 0, 0.7);
-        }
-
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: radial-gradient(circle, var(--red-bg) 0%, var(--dark-red) 100%);
-            color: white;
-            margin: 0;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        .header {
-            background: #000;
-            padding: 15px;
-            border-bottom: 3px solid var(--gold);
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            text-shadow: 2px 2px 4px #000;
-        }
-
-        .container {
-            display: flex;
-            padding: 20px;
-            gap: 20px;
-            justify-content: center;
-        }
-
-        .main-display {
-            flex: 3;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .winner-row {
-            display: flex;
-            align-items: center;
-            background: var(--glass);
-            padding: 10px 25px;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 235, 59, 0.2);
-            width: 100%;
-            max-width: 950px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
-        .row-label {
-            font-weight: 900;
-            color: var(--gold);
-            font-size: 1.4rem;
-            min-width: 90px;
-            text-shadow: 1px 1px 2px #000;
-        }
-
-        .slot-group { display: flex; gap: 8px; margin: 0 20px; }
-        .slot {
-            width: 65px;
-            height: 95px;
-            background: linear-gradient(145deg, #1a1a1a, #000);
-            border: 2px solid #555;
-            border-radius: 10px;
-            font-size: 4.5rem;
-            font-weight: 900;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #555;
-            transition: 0.2s;
-        }
-
-        .spinning { color: #00ff00; border-color: #00ff00; }
-        .final { 
-            color: #fff; 
-            border-color: var(--gold); 
-            text-shadow: 0 0 15px var(--gold);
-            box-shadow: 0 0 15px rgba(255, 235, 59, 0.4);
-        }
-
-        .winner-name {
-            flex: 1;
-            text-align: left;
-            font-size: 1.6rem;
-            color: var(--bright-gold);
-            font-weight: 800;
-            text-transform: uppercase;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-
-        .sidebar {
-            flex: 1;
-            max-width: 300px;
-            background: var(--glass);
-            padding: 25px;
-            border-radius: 25px;
-            border: 3px solid var(--gold);
-            text-align: center;
-            height: fit-content;
-            position: sticky;
-            top: 20px;
-        }
-
-        #qrcode { background: white; padding: 10px; border-radius: 10px; display: inline-block; margin-bottom: 15px; }
-        #qrcode img { width: 150px; height: 150px; }
-
-        .btn-mega {
-            width: 100%;
-            padding: 20px;
-            font-size: 1.6rem;
-            font-weight: 900;
-            background: linear-gradient(to bottom, #ffeb3b, #fbc02d);
-            color: #8b0000;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 8px 0 #f57f17;
-            margin-top: 15px;
-        }
-        .btn-mega:active { transform: translateY(4px); box-shadow: 0 4px 0 #f57f17; }
+        :root { --gold: #ffeb3b; --red-bg: #8b0000; --dark: #310000; --glass: rgba(0,0,0,0.8); }
+        body { font-family: 'Segoe UI', sans-serif; background: radial-gradient(circle, var(--red-bg), var(--dark)); color: white; margin: 0; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
         
-        .volume-box { margin: 15px 0; }
+        .header { background: #000; padding: 15px; border-bottom: 3px solid var(--gold); text-align: center; font-size: 1.5rem; font-weight: 900; color: var(--gold); letter-spacing: 2px; }
+        
+        .layout { display: flex; gap: 20px; padding: 20px; flex: 1; }
+
+        /* Cột trái: Quản lý Karaoke */
+        .karaoke-panel { flex: 1; background: var(--glass); border-radius: 20px; border: 1px solid var(--gold); padding: 20px; display: flex; flex-direction: column; }
+        .kara-list { flex: 1; overflow-y: auto; text-align: left; margin-top: 15px; }
+        .kara-item { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid var(--gold); }
+        .kara-item b { color: var(--gold); }
+
+        /* Cột giữa: 36 lồng quay */
+        .draw-panel { flex: 2.5; background: var(--glass); border-radius: 20px; padding: 20px; border: 1px solid var(--gold); text-align: center; }
+        .winner-row { display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,235,59,0.2); }
+        .row-label { font-weight: 900; color: var(--gold); min-width: 70px; }
+        .slot-group { display: flex; gap: 5px; }
+        .slot { width: 50px; height: 75px; background: #000; border: 2px solid #444; border-radius: 8px; font-size: 3rem; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .spinning { color: #00ff00; border-color: #00ff00; }
+        .final { color: white; border-color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+        .winner-name { flex: 1; text-align: left; padding-left: 15px; font-size: 1.3rem; font-weight: bold; color: var(--gold); }
+
+        /* Cột phải: Điều khiển */
+        .control-panel { flex: 0.8; background: var(--glass); border-radius: 20px; border: 1px solid var(--gold); padding: 20px; text-align: center; }
+        #qrcode { background: white; padding: 10px; border-radius: 10px; display: inline-block; }
+        .btn-mega { width: 100%; padding: 20px; font-size: 1.5rem; font-weight: 900; background: linear-gradient(to bottom, #ffeb3b, #fbc02d); color: #8b0000; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 0 #f57f17; margin-top: 20px; }
+        .btn-mega:active { transform: translateY(4px); box-shadow: 0 4px 0 #f57f17; }
         input[type=range] { width: 100%; accent-color: var(--gold); }
     </style>
 </head>
 <body>
 
-<div class="header">🧧 ĐẠI TIỆC TẤT NIÊN - QUAY SỐ 6 GIẢI ĐỒNG THỜI 🧧</div>
+<div class="header">🧧 ĐIỀU PHỐI ĐẠI TIỆC TẤT NIÊN 2025 - XUÂN BÍNH NGỌ 2026 🧧</div>
 
-<div class="container">
-    <div class="main-display" id="megaUI"></div>
-
-    <div class="sidebar">
-        <div id="qrcode"></div>
-        <div style="font-size: 0.9rem; color: #aaa;">NGƯỜI THAM GIA</div>
-        <div id="totalCount" style="font-size: 3.5rem; font-weight: 900; color: var(--gold);">0</div>
-        
-        <div class="volume-box">
-            <div style="font-size: 0.7rem; margin-bottom: 5px;">ÂM LƯỢNG</div>
-            <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="updateVol(this.value)">
+<div class="layout">
+    <div class="karaoke-panel">
+        <h3 style="margin:0; color: var(--gold);">🎤 DANH SÁCH KARAOKE</h3>
+        <div id="karaList" class="kara-list">
+            <div style="color: #666;">Chưa có bài hát nào được đăng ký...</div>
         </div>
+    </div>
 
-        <button class="btn-mega" id="spinBtn" onclick="handleMegaSpin()">QUAY TẤT CẢ</button>
-        <button onclick="resetData()" style="margin-top:20px; color:#ff4b2b; background:none; border:none; cursor:pointer; text-decoration:underline; font-size:0.8rem;">Xóa dữ liệu cũ</button>
+    <div class="draw-panel">
+        <div id="megaUI"></div>
+        <div id="mainMsg" style="margin-top:15px; font-size:1.5rem; font-weight:bold; color:var(--gold);">SẴN SÀNG QUAY THƯỞNG</div>
+    </div>
+
+    <div class="control-panel">
+        <div id="qrcode"></div>
+        <div style="margin: 20px 0;">
+            <div style="font-size: 2.5rem; font-weight: 900; color: var(--gold);" id="totalCount">0</div>
+            <div style="font-size: 0.8rem; color: #aaa;">NGƯỜI THAM GIA</div>
+        </div>
+        <div style="font-size: 0.7rem; color: #666; margin-bottom: 5px;">ÂM LƯỢNG</div>
+        <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="updateVol(this.value)">
+        <button class="btn-mega" id="spinBtn" onclick="handleMegaSpin()">QUAY THƯỞNG</button>
+        <button onclick="resetData()" style="margin-top:30px; background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer; text-decoration:underline;">Xóa toàn bộ dữ liệu</button>
     </div>
 </div>
 
@@ -178,24 +83,38 @@
     spinSound.loop = true;
     function updateVol(v) { spinSound.volume = v; winSound.volume = v; }
 
+    // Khởi tạo giao diện 6 dòng
     const ui = document.getElementById('megaUI');
     for (let r = 1; r <= 6; r++) {
         ui.innerHTML += `
             <div class="winner-row">
                 <div class="row-label">GIẢI ${r}</div>
-                <div class="slot-group" id="row${r}">
+                <div class="slot-group">
                     ${Array(6).fill(0).map((_, s) => `<div id="r${r}s${s+1}" class="slot">0</div>`).join('')}
                 </div>
                 <div class="winner-name" id="name${r}">---</div>
             </div>`;
     }
 
+    // Lắng nghe danh sách Karaoke và số lượng người tham gia
+    db.collection("participants").orderBy("ts", "asc").onSnapshot(snap => {
+        document.getElementById('totalCount').innerText = snap.size;
+        const karaList = document.getElementById('karaList');
+        karaList.innerHTML = "";
+        snap.forEach(doc => {
+            const d = doc.data();
+            if(d.song && d.song !== "Không đăng ký") {
+                karaList.innerHTML += `<div class="kara-item">#${d.stt} - <b>${d.name}</b>: ${d.song}</div>`;
+            }
+        });
+    });
+
     async function handleMegaSpin() {
         const snap = await db.collection("participants").get();
         if (snap.size < 6) return alert("Cần tối thiểu 6 người!");
 
         document.getElementById('spinBtn').disabled = true;
-        spinSound.currentTime = 0; spinSound.play().catch(() => {});
+        spinSound.currentTime = 0; spinSound.play().catch(()=>{});
 
         let list = snap.docs.map(d => d.data());
         let winners = [];
@@ -203,28 +122,21 @@
             winners.push(list.splice(Math.floor(Math.random() * list.length), 1)[0]);
         }
 
-        // CẬP NHẬT QUAN TRỌNG: Gửi trạng thái quay kèm danh sách winners luôn để máy HS chạy cùng
+        // Bước quan trọng: Gửi lệnh quay đồng bộ cho máy HS
         await db.collection("system_status").doc("current_draw").set({
             status: "SPINNING",
             winners: winners,
             ts: Date.now()
         });
 
-        // Reset hiển thị máy thầy
-        for (let r = 1; r <= 6; r++) {
-            document.getElementById(`name${r}`).innerText = "ĐANG QUAY...";
-            for (let s = 1; s <= 6; s++) {
-                let el = document.getElementById(`r${r}s${s}`);
-                el.innerText = "0"; el.classList.remove('final'); el.classList.add('spinning');
-            }
-        }
-
-        // Hiệu ứng máy thầy dừng tầng
+        // Chạy hiệu ứng quay tại máy Admin
         let promises = winners.map((winner, rIdx) => {
             return new Promise(async (resolve) => {
                 const r = rIdx + 1;
+                document.getElementById(`name${r}`).innerText = "ĐANG QUAY...";
                 for (let s = 1; s <= 6; s++) {
                     const el = document.getElementById(`r${r}s${s}`);
+                    el.classList.add('spinning'); el.classList.remove('final');
                     let start = Date.now();
                     while (Date.now() - start < (2000 + rIdx * 800 + s * 200)) {
                         el.innerText = Math.floor(Math.random() * 10);
@@ -242,16 +154,13 @@
         await Promise.all(promises);
         spinSound.pause();
         confetti({ particleCount: 300, spread: 160, origin: { y: 0.6 } });
-        
-        // Cập nhật trạng thái xong để máy HS báo kết quả cuối
-        await db.collection("system_status").doc("current_draw").update({ status: "DONE" });
         document.getElementById('spinBtn').disabled = false;
+        await db.collection("system_status").doc("current_draw").update({ status: "DONE" });
     }
 
     const regUrl = window.location.href.replace('index.html', 'dangky.html');
-    new QRCode(document.getElementById("qrcode"), { text: regUrl, width: 150, height: 150 });
-    db.collection("participants").onSnapshot(s => document.getElementById('totalCount').innerText = s.size);
-    async function resetData() { if(confirm("Xóa danh sách?")) { const s = await db.collection("participants").get(); const b = db.batch(); s.docs.forEach(d => b.delete(d.ref)); await b.commit(); location.reload(); } }
+    new QRCode(document.getElementById("qrcode"), { text: regUrl, width: 140, height: 140 });
+    async function resetData() { if(confirm("Xóa toàn bộ dữ liệu (Bao gồm Karaoke và người tham gia)?")) { const s = await db.collection("participants").get(); const b = db.batch(); s.docs.forEach(d => b.delete(d.ref)); await b.commit(); location.reload(); } }
 </script>
 </body>
 </html>
