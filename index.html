@@ -2,107 +2,143 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Xuân App 2026 - Bản Siêu Mượt</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
+    <title>SỰ KIỆN TẤT NIÊN - QUAY SỐ MAY MẮN</title>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
-        #container { position: relative; width: 100vw; height: 100vh; }
-        canvas { position: absolute; width: 100%; height: 100%; object-fit: cover; }
-        video { display: none; }
+        :root { --tet-red: #d32f2f; --tet-gold: #ffeb3b; --bg: #8b0000; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; }
+        .header { background: #5d0000; padding: 20px; border-bottom: 3px solid var(--tet-gold); }
+        .main-container { max-width: 1200px; margin: auto; padding: 20px; display: flex; gap: 20px; }
         
-        /* Hiệu ứng loading */
-        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: gold; z-index: 1000; font-weight: bold; text-align: center; }
-        
-        .ui { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 40px; }
-        button { padding: 12px 25px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-mode { background: #444; color: white; }
-        .btn-mode.active { background: #d32f2f; }
-        .btn-snap { background: #ffd700; color: #000; }
+        .card { background: rgba(0,0,0,0.5); border-radius: 25px; padding: 30px; border: 2px solid var(--tet-gold); flex: 3; }
+        .sidebar { flex: 1; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 25px; border: 1px solid var(--tet-gold); }
+
+        /* Lồng quay */
+        .slot-group { display: flex; justify-content: center; gap: 10px; margin: 30px 0; }
+        .slot { width: 80px; height: 120px; background: #000; border: 3px solid var(--tet-gold); border-radius: 15px; font-size: 5rem; font-weight: 900; display: flex; align-items: center; justify-content: center; color: var(--tet-gold); }
+        .spinning { color: #00ff00; border-color: #00ff00; }
+
+        /* Danh sách 6 người trúng giải */
+        .winner-list { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .winner-item { background: var(--tet-gold); color: #000; padding: 15px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; border: 2px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        .btn-spin { padding: 20px 60px; font-size: 1.8rem; font-weight: 900; background: linear-gradient(145deg, #ffeb3b, #fbc02d); color: #8b0000; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 8px #f57f17; }
+        .btn-spin:active { transform: translateY(4px); box-shadow: 0 4px #f57f17; }
+        input[type=range] { width: 100%; accent-color: var(--tet-gold); }
+        #qrcode { background: white; padding: 10px; border-radius: 10px; display: inline-block; }
     </style>
 </head>
 <body>
 
-<div id="container">
-    <div id="loader">🚀 Đang khởi động AI...<br>(Vui lòng chờ vài giây)</div>
-    <video id="video" autoplay playsinline></video>
-    <canvas id="mainCanvas"></canvas>
+<div class="header">
+    <h1 style="margin:0; color:var(--tet-gold); text-shadow: 2px 2px 5px #000;">🎊 CHƯƠNG TRÌNH QUAY SỐ TẤT NIÊN 🎊</h1>
+</div>
 
-    <div class="ui">
-        <button id="btn-modern" class="btn-mode" onclick="changeMode('modern')">🌊 BIỂN</button>
-        <button id="btn-hongkong" class="btn-mode active" onclick="changeMode('hongkong')">🏮 HONGKONG</button>
-        <button class="btn-snap" onclick="takeSnap()">📸 CHỤP ẢNH</button>
+<div class="main-layout main-container">
+    <div class="sidebar">
+        <div id="qrcode"></div>
+        <div style="margin: 20px 0;">
+            <div style="font-size: 0.8rem;">ÂM LƯỢNG</div>
+            <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="updateVol(this.value)">
+        </div>
+        <div style="font-size: 2rem; font-weight: 900; color: var(--tet-gold);" id="totalCount">0</div>
+        <div>THÀNH VIÊN</div>
+        <button onclick="resetData()" style="margin-top:20px; color:white; background:none; border:1px solid #ff0000; padding:5px; cursor:pointer;">Reset danh sách</button>
+    </div>
+
+    <div class="card">
+        <div class="slot-group">
+            <div id="d1" class="slot">0</div><div id="d2" class="slot">0</div><div id="d3" class="slot">0</div>
+            <div id="d4" class="slot">0</div><div id="d5" class="slot">0</div><div id="d6" class="slot">0</div>
+        </div>
+        
+        <button id="spinBtn" class="btn-spin" onclick="handleMegaSpin()">BẮT ĐẦU QUAY</button>
+
+        <div style="margin-top: 30px; font-size: 1.5rem; color: var(--tet-gold);">🏆 DANH SÁCH 6 NGƯỜI MAY MẮN 🏆</div>
+        <div class="winner-list" id="winnerListUI">
+            </div>
     </div>
 </div>
 
 <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('mainCanvas');
-    const ctx = canvas.getContext('2d');
-    const loader = document.getElementById('loader');
-    let currentMode = 'hongkong';
-
-    const bgImages = {
-        modern: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1280',
-        hongkong: 'https://images.unsplash.com/photo-1596541539266-9b81e8f3d611?w=1280'
+    // --- Dán Firebase Config của thầy vào đây ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCZs0sGNdMxeS9cL_g9HeMf1LOlxzOUKf4",
+        authDomain: "chamtn-26e8f.firebaseapp.com",
+        projectId: "chamtn-26e8f",
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    const imgBeach = new Image(); imgBeach.src = bgImages.modern;
-    const imgHK = new Image(); imgHK.src = bgImages.hongkong;
+    const spinSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3");
+    const winSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3");
+    spinSound.loop = true;
 
-    const selfie = new SelfieSegmentation({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
-    });
+    function updateVol(v) { spinSound.volume = v; winSound.volume = v; }
 
-    // Model 0 giúp app CHẠY MƯỢT HƠN trên máy yếu
-    selfie.setOptions({ modelSelection: 0 }); 
-    selfie.onResults(onResults);
+    async function handleMegaSpin() {
+        const snap = await db.collection("participants").get();
+        if(snap.size < 6) return alert("Cần tối thiểu 6 người đăng ký!");
+        
+        const btn = document.getElementById('spinBtn');
+        btn.disabled = true;
+        document.getElementById('winnerListUI').innerHTML = "";
+        
+        // Chọn ngẫu nhiên 6 người khác nhau
+        let list = snap.docs.map(d => d.data());
+        let winners = [];
+        for(let i=0; i<6; i++) {
+            let idx = Math.floor(Math.random() * list.length);
+            winners.push(list.splice(idx, 1)[0]);
+        }
 
-    navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } })
-        .then(stream => {
-            video.srcObject = stream;
-            video.onloadeddata = () => {
-                loader.style.display = 'none';
-                sendToAI();
-            };
+        // Quay lồng để tìm người đầu tiên (tạo không khí kịch tính)
+        spinSound.currentTime = 0; spinSound.play();
+        const mainWinner = winners[0];
+        
+        // Gửi lệnh quay đồng bộ xuống tất cả HS (Chỉ em nào là mainWinner mới kêu)
+        await db.collection("system_status").doc("current_draw").set({
+            winningNumber: mainWinner.number, status: "SPINNING", ts: Date.now()
         });
 
-    function sendToAI() {
-        selfie.send({image: video});
-        requestAnimationFrame(sendToAI);
+        for(let i=0; i<6; i++) {
+            const el = document.getElementById('d'+(i+1));
+            el.classList.add('spinning');
+            let start = Date.now();
+            while(Date.now() - start < (1500 + i*400)) {
+                el.innerText = Math.floor(Math.random()*10);
+                await new Promise(r => setTimeout(r, 60));
+            }
+            el.innerText = mainWinner.number[i];
+            el.classList.remove('spinning');
+        }
+
+        spinSound.pause(); winSound.play();
+        confetti({ particleCount: 200, spread: 100 });
+
+        // Hiển thị 6 người thắng lần lượt
+        const listUI = document.getElementById('winnerListUI');
+        winners.forEach((w, index) => {
+            setTimeout(() => {
+                const item = document.createElement('div');
+                item.className = 'winner-item';
+                item.innerText = `${index + 1}. ${w.name.toUpperCase()} (${w.class})`;
+                listUI.appendChild(item);
+                if(index > 0) winSound.play(); // Kêu chuông mỗi khi hiện 1 người mới
+            }, index * 1000);
+        });
+
+        btn.disabled = false;
+        await db.collection("system_status").doc("current_draw").update({ status: "DONE" });
     }
 
-    function onResults(results) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        ctx.save();
-        // Vẽ người lật gương
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height);
-        
-        ctx.globalCompositeOperation = 'source-in';
-        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-        
-        // Vẽ nền
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.drawImage(currentMode === 'modern' ? imgBeach : imgHK, 0, 0, canvas.width, canvas.height);
-        
-        ctx.restore();
-    }
-
-    function changeMode(m) {
-        currentMode = m;
-        document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-${m}`).classList.add('active');
-    }
-
-    function takeSnap() {
-        const link = document.createElement('a');
-        link.download = 'Checkin_2026.png';
-        link.href = canvas.toDataURL();
-        link.click();
-    }
+    const regUrl = window.location.href.replace('index.html', 'dangky.html');
+    new QRCode(document.getElementById("qrcode"), { text: regUrl, width: 140, height: 140 });
+    db.collection("participants").onSnapshot(s => document.getElementById('totalCount').innerText = s.size);
+    async function resetData() { if(confirm("Xóa hết?")) { const s = await db.collection("participants").get(); const b = db.batch(); s.docs.forEach(d => b.delete(d.ref)); await b.commit(); location.reload(); } }
 </script>
 </body>
 </html>
