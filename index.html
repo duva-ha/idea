@@ -36,7 +36,6 @@
             text-shadow: 2px 2px 4px #000;
         }
 
-        /* Bố cục chính */
         .container {
             display: flex;
             padding: 20px;
@@ -44,7 +43,6 @@
             justify-content: center;
         }
 
-        /* Vùng hiển thị 6 dòng quay số */
         .main-display {
             flex: 3;
             display: flex;
@@ -73,7 +71,6 @@
             text-shadow: 1px 1px 2px #000;
         }
 
-        /* Ô số Slot */
         .slot-group { display: flex; gap: 8px; margin: 0 20px; }
         .slot {
             width: 65px;
@@ -110,7 +107,6 @@
             text-overflow: ellipsis;
         }
 
-        /* Sidebar điều khiển */
         .sidebar {
             flex: 1;
             max-width: 300px;
@@ -151,8 +147,7 @@
 <div class="header">🧧 ĐẠI TIỆC TẤT NIÊN - QUAY SỐ 6 GIẢI ĐỒNG THỜI 🧧</div>
 
 <div class="container">
-    <div class="main-display" id="megaUI">
-        </div>
+    <div class="main-display" id="megaUI"></div>
 
     <div class="sidebar">
         <div id="qrcode"></div>
@@ -170,7 +165,6 @@
 </div>
 
 <script>
-    // --- CẤU HÌNH FIREBASE CỦA THẦY ---
     const firebaseConfig = {
         apiKey: "AIzaSyCZs0sGNdMxeS9cL_g9HeMf1LOlxzOUKf4",
         authDomain: "chamtn-26e8f.firebaseapp.com",
@@ -184,7 +178,6 @@
     spinSound.loop = true;
     function updateVol(v) { spinSound.volume = v; winSound.volume = v; }
 
-    // Tạo 6 dòng tự động
     const ui = document.getElementById('megaUI');
     for (let r = 1; r <= 6; r++) {
         ui.innerHTML += `
@@ -210,7 +203,14 @@
             winners.push(list.splice(Math.floor(Math.random() * list.length), 1)[0]);
         }
 
-        // Reset trạng thái quay
+        // CẬP NHẬT QUAN TRỌNG: Gửi trạng thái quay kèm danh sách winners luôn để máy HS chạy cùng
+        await db.collection("system_status").doc("current_draw").set({
+            status: "SPINNING",
+            winners: winners,
+            ts: Date.now()
+        });
+
+        // Reset hiển thị máy thầy
         for (let r = 1; r <= 6; r++) {
             document.getElementById(`name${r}`).innerText = "ĐANG QUAY...";
             for (let s = 1; s <= 6; s++) {
@@ -219,7 +219,7 @@
             }
         }
 
-        // Hiệu ứng dừng tầng kịch tính
+        // Hiệu ứng máy thầy dừng tầng
         let promises = winners.map((winner, rIdx) => {
             return new Promise(async (resolve) => {
                 const r = rIdx + 1;
@@ -242,10 +242,12 @@
         await Promise.all(promises);
         spinSound.pause();
         confetti({ particleCount: 300, spread: 160, origin: { y: 0.6 } });
+        
+        // Cập nhật trạng thái xong để máy HS báo kết quả cuối
+        await db.collection("system_status").doc("current_draw").update({ status: "DONE" });
         document.getElementById('spinBtn').disabled = false;
     }
 
-    // QR Code tự động
     const regUrl = window.location.href.replace('index.html', 'dangky.html');
     new QRCode(document.getElementById("qrcode"), { text: regUrl, width: 150, height: 150 });
     db.collection("participants").onSnapshot(s => document.getElementById('totalCount').innerText = s.size);
