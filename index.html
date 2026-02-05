@@ -5,7 +5,7 @@
     <title>ĐIỀU PHỐI TẤT NIÊN 2025 - XUÂN BÍNH NGỌ 2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://www.gstatic.com/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
         :root { --gold: #ffeb3b; --red-bg: #8b0000; --dark: #310000; --glass: rgba(0,0,0,0.8); }
@@ -16,10 +16,22 @@
         .layout { display: flex; gap: 20px; padding: 20px; flex: 1; }
 
         /* Cột trái: Quản lý Karaoke */
-        .karaoke-panel { flex: 1; background: var(--glass); border-radius: 20px; border: 1px solid var(--gold); padding: 20px; display: flex; flex-direction: column; }
+        .karaoke-panel { flex: 1.2; background: var(--glass); border-radius: 20px; border: 1px solid var(--gold); padding: 20px; display: flex; flex-direction: column; }
         .kara-list { flex: 1; overflow-y: auto; text-align: left; margin-top: 15px; }
-        .kara-item { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid var(--gold); }
+        .kara-item { 
+            background: rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; margin-bottom: 8px; 
+            border-left: 4px solid var(--gold); display: flex; align-items: center; justify-content: space-between;
+        }
+        .kara-item.is-done { opacity: 0.5; border-left-color: #666; background: rgba(0,0,0,0.3); }
+        .kara-info { flex: 1; margin-right: 10px; }
         .kara-item b { color: var(--gold); }
+        
+        /* Style cho nút check */
+        .check-btn { 
+            background: #28a745; color: white; border: none; border-radius: 5px; 
+            padding: 5px 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold;
+        }
+        .check-btn:disabled { background: #444; cursor: not-allowed; }
 
         /* Cột giữa: 36 lồng quay */
         .draw-panel { flex: 2.5; background: var(--glass); border-radius: 20px; padding: 20px; border: 1px solid var(--gold); text-align: center; }
@@ -45,9 +57,9 @@
 
 <div class="layout">
     <div class="karaoke-panel">
-        <h3 style="margin:0; color: var(--gold);">🎤 DANH SÁCH KARAOKE</h3>
+        <h3 style="margin:0; color: var(--gold);">🎤 DANH SÁCH HÁT (THEO THỨ TỰ)</h3>
         <div id="karaList" class="kara-list">
-            <div style="color: #666;">Chưa có bài hát nào được đăng ký...</div>
+            <div style="color: #666;">Đang tải danh sách...</div>
         </div>
     </div>
 
@@ -83,7 +95,7 @@
     spinSound.loop = true;
     function updateVol(v) { spinSound.volume = v; winSound.volume = v; }
 
-    // Khởi tạo giao diện 6 dòng
+    // Khởi tạo lồng quay
     const ui = document.getElementById('megaUI');
     for (let r = 1; r <= 6; r++) {
         ui.innerHTML += `
@@ -96,18 +108,44 @@
             </div>`;
     }
 
-    // Lắng nghe danh sách Karaoke và số lượng người tham gia
+    // Lắng nghe danh sách và cập nhật UI
     db.collection("participants").orderBy("ts", "asc").onSnapshot(snap => {
         document.getElementById('totalCount').innerText = snap.size;
         const karaList = document.getElementById('karaList');
         karaList.innerHTML = "";
+        
+        let counter = 1;
         snap.forEach(doc => {
             const d = doc.data();
+            const id = doc.id;
             if(d.song && d.song !== "Không đăng ký") {
-                karaList.innerHTML += `<div class="kara-item">#${d.stt} - <b>${d.name}</b>: ${d.song}</div>`;
+                const isDone = d.isDone === true;
+                karaList.innerHTML += `
+                    <div class="kara-item ${isDone ? 'is-done' : ''}">
+                        <div class="kara-info">
+                            #${counter} - <b>${d.name}</b><br>
+                            <small>🎵 ${d.song}</small>
+                        </div>
+                        <button class="check-btn" 
+                                onclick="markAsDone('${id}')" 
+                                ${isDone ? 'disabled' : ''}>
+                            ${isDone ? '✓ Xong' : 'Check'}
+                        </button>
+                    </div>`;
+                counter++;
             }
         });
+        if(counter === 1) karaList.innerHTML = "<div style='color:#666'>Chưa có bài đăng ký...</div>";
     });
+
+    // Hàm đánh dấu đã hát - Không thể đảo ngược
+    async function markAsDone(docId) {
+        if(confirm("Xác nhận người này đã hát xong?")) {
+            await db.collection("participants").doc(docId).update({
+                isDone: true
+            });
+        }
+    }
 
     async function handleMegaSpin() {
         const snap = await db.collection("participants").get();
@@ -122,14 +160,12 @@
             winners.push(list.splice(Math.floor(Math.random() * list.length), 1)[0]);
         }
 
-        // Bước quan trọng: Gửi lệnh quay đồng bộ cho máy HS
         await db.collection("system_status").doc("current_draw").set({
             status: "SPINNING",
             winners: winners,
             ts: Date.now()
         });
 
-        // Chạy hiệu ứng quay tại máy Admin
         let promises = winners.map((winner, rIdx) => {
             return new Promise(async (resolve) => {
                 const r = rIdx + 1;
@@ -158,9 +194,20 @@
         await db.collection("system_status").doc("current_draw").update({ status: "DONE" });
     }
 
-    const regUrl = window.location.href.replace('index.html', 'dangky.html');
-    new QRCode(document.getElementById("qrcode"), { text: regUrl, width: 140, height: 140 });
-    async function resetData() { if(confirm("Xóa toàn bộ dữ liệu (Bao gồm Karaoke và người tham gia)?")) { const s = await db.collection("participants").get(); const b = db.batch(); s.docs.forEach(d => b.delete(d.ref)); await b.commit(); location.reload(); } }
+    // QRCode: Tự động nhận diện link hiện tại để trỏ tới trang dangky.html
+    const currentPath = window.location.pathname;
+    const regUrl = window.location.origin + currentPath.replace('index.html', 'dangky.html');
+    new QRCode(document.getElementById("qrcode"), { text: regUrl, width: 120, height: 120 });
+
+    async function resetData() { 
+        if(confirm("Xóa toàn bộ dữ liệu (Bao gồm Karaoke và người tham gia)?")) { 
+            const s = await db.collection("participants").get(); 
+            const b = db.batch(); 
+            s.docs.forEach(d => b.delete(d.ref)); 
+            await b.commit(); 
+            location.reload(); 
+        } 
+    }
 </script>
 </body>
 </html>
