@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>ADIMIN - 8/3 THPT TRẦN VĂN THÀNH</title>
+    <title>ADMIN - 8/3 THPT TRẦN VĂN THÀNH</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
@@ -21,7 +21,7 @@
         }
         .group-name { font-weight: bold; font-size: 0.9rem; flex: 1; }
         .score-control { display: flex; align-items: center; gap: 10px; }
-        .score-value { font-size: 1.5rem; font-weight: 900; color: var(--gold); min-width: 40px; text-align: center; }
+        .score-value { font-size: 1.5rem; font-weight: 900; color: var(--gold); min-width: 50px; text-align: center; }
         .btn-adj { width: 35px; height: 35px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; font-size: 1.2rem; }
         .btn-plus { background: #4caf50; color: white; }
         .btn-minus { background: #f44336; color: white; }
@@ -45,7 +45,7 @@
 
 <div class="layout">
     <div class="score-panel">
-        <h3 style="color: var(--gold); margin-top: 0;">📊 ĐIỂM SỐ CÁC TỔ</h3>
+        <h3 style="color: var(--gold); margin-top: 0;">📊 ĐIỂM TRUNG BÌNH CÁC TỔ</h3>
         <div id="groupList"></div>
     </div>
 
@@ -58,7 +58,7 @@
         <div style="font-size: 0.8rem; color: #aaa;">TỔNG NGƯỜI DỰ THƯỞNG</div>
         <div style="font-size: 3rem; font-weight: 900; color: var(--gold);" id="countUser">0</div>
         <button class="btn-mega" id="spinBtn" onclick="startDraw()">QUAY SỐ MAY MẮN</button>
-        <p style="font-size: 0.7rem; color: #666; margin-top: 20px;">* Hệ thống tự động lấy danh sách từ người chơi đã gửi điểm.</p>
+        <p style="font-size: 0.7rem; color: #666; margin-top: 20px;">* Điểm trung bình = Tổng điểm / Số người tham gia.</p>
     </div>
 </div>
 
@@ -73,8 +73,10 @@
 
     const groups = ["Văn phòng-Sử Địa", "Tiếng Anh", "Văn", "Toán", "Lý-CN", "Hóa-Sinh", "Tin KTPL-TDQP"];
     const winSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3");
+    
+    let totalParticipants = 0; // Biến lưu số người chơi hiện tại
 
-    // Khởi tạo danh sách tổ và UI quay số (6 giải)
+    // Khởi tạo giao diện
     function initUI() {
         const gList = document.getElementById('groupList');
         groups.forEach(g => {
@@ -83,13 +85,14 @@
                     <div class="group-name">${g}</div>
                     <div class="score-control">
                         <button class="btn-adj btn-minus" onclick="updateScore('${g}', -1)">-</button>
-                        <div class="score-value" id="score-${g}">0</div>
+                        <div class="score-value" id="score-${g}">0.0</div>
                         <button class="btn-adj btn-plus" onclick="updateScore('${g}', 1)">+</button>
                     </div>
                 </div>`;
-            // Lắng nghe điểm số thời gian thực
+            
+            // Lắng nghe điểm tổng của từng tổ và tính trung bình
             db.collection("points").doc(g).onSnapshot(doc => {
-                if(doc.exists) document.getElementById(`score-${g}`).innerText = doc.data().score;
+                renderAvgScore(g, doc.data());
             });
         });
 
@@ -106,17 +109,35 @@
         }
     }
 
-    // Cập nhật điểm lên Firebase
-    async function updateScore(group, val) {
-        const ref = db.collection("points").doc(group);
-        const doc = await ref.get();
-        let newScore = (doc.exists ? (doc.data().score || 0) : 0) + val;
-        await ref.set({ score: newScore < 0 ? 0 : newScore });
+    // Hàm tính và hiển thị điểm trung bình
+    function renderAvgScore(groupName, data) {
+        const totalScore = (data && data.score) ? data.score : 0;
+        const avg = totalParticipants > 0 ? (totalScore / totalParticipants).toFixed(1) : "0.0";
+        const scoreEl = document.getElementById(`score-${groupName}`);
+        if(scoreEl) scoreEl.innerText = avg;
     }
 
-    // Lắng nghe tổng số người chơi từ collection mới
+    // Hàm làm mới toàn bộ bảng điểm khi số người tham gia thay đổi
+    function refreshAllScores() {
+        groups.forEach(async (g) => {
+            const doc = await db.collection("points").doc(g).get();
+            renderAvgScore(g, doc.data());
+        });
+    }
+
+    // Cập nhật điểm lên Firebase (vẫn cộng vào điểm tổng)
+    async function updateScore(group, val) {
+        const ref = db.collection("points").doc(group);
+        await ref.set({ 
+            score: firebase.firestore.FieldValue.increment(val) 
+        }, { merge: true });
+    }
+
+    // Lắng nghe tổng số người chơi từ collection
     db.collection("participants_83").onSnapshot(snap => {
-        document.getElementById('countUser').innerText = snap.size;
+        totalParticipants = snap.size;
+        document.getElementById('countUser').innerText = totalParticipants;
+        refreshAllScores(); // Cập nhật lại trung bình cho tất cả các tổ
     });
 
     async function startDraw() {
@@ -130,14 +151,12 @@
             winners.push(list.splice(Math.floor(Math.random()*list.length), 1)[0]);
         }
 
-        // Đẩy trạng thái lên hệ thống để máy học sinh cùng quay
         await db.collection("system_status").doc("current_draw").set({
             status: "SPINNING",
             winners: winners,
             ts: Date.now()
         });
 
-        // Hiệu ứng quay số trên máy Admin
         let promises = winners.map((winner, rIdx) => {
             return new Promise(async (res) => {
                 const r = rIdx + 1;
