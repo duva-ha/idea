@@ -13,7 +13,7 @@
         .header { background: #000; padding: 15px; border-bottom: 3px solid var(--gold); text-align: center; font-size: 1.6rem; font-weight: 900; color: var(--gold); text-transform: uppercase; }
         .layout { display: flex; gap: 20px; padding: 20px; flex: 1; }
 
-        /* Cột trái: Bảng điểm trung bình */
+        /* Bảng điểm trung bình */
         .score-panel { flex: 1; background: var(--glass); border-radius: 25px; border: 1px solid var(--gold); padding: 25px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .group-item { 
             background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin-bottom: 12px; 
@@ -22,20 +22,25 @@
         .group-name { font-weight: bold; font-size: 1.1rem; }
         .score-value { font-size: 2rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
 
-        /* Cột giữa: Giải Đặc Biệt */
+        /* Giải Đặc Biệt */
         .draw-panel { flex: 2; background: var(--glass); border-radius: 25px; padding: 30px; border: 1px solid var(--gold); text-align: center; display: flex; flex-direction: column; justify-content: center; }
         .lucky-title { font-size: 2.5rem; font-weight: 900; color: var(--gold); margin-bottom: 30px; text-shadow: 0 0 15px var(--gold); }
         .slot-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
-        .slot { width: 70px; height: 110px; background: #000; border: 3px solid #444; border-radius: 12px; font-size: 4.5rem; font-weight: 900; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s; }
+        .slot { width: 70px; height: 110px; background: #000; border: 3px solid #444; border-radius: 12px; font-size: 4.5rem; font-weight: 900; display: flex; align-items: center; justify-content: center; color: white; }
         .spinning { color: #00ff00; border-color: #00ff00; box-shadow: 0 0 20px #00ff00; }
-        .winner-display { font-size: 2.8rem; font-weight: 900; color: white; min-height: 1.2em; text-transform: uppercase; background: linear-gradient(to right, transparent, rgba(255,215,0,0.2), transparent); padding: 10px; }
+        .winner-display { font-size: 2.8rem; font-weight: 900; color: white; min-height: 1.2em; text-transform: uppercase; padding: 10px; }
 
-        /* Cột phải: Thống kê */
-        .control-panel { flex: 0.7; background: var(--glass); border-radius: 25px; border: 1px solid var(--gold); padding: 25px; text-align: center; }
-        .count-box { font-size: 4rem; font-weight: 900; color: var(--gold); margin: 20px 0; }
-        .btn-mega { width: 100%; padding: 25px; font-size: 1.5rem; font-weight: 900; background: linear-gradient(to bottom, #ffd700, #ffa000); color: #4a0019; border: none; border-radius: 20px; cursor: pointer; box-shadow: 0 8px 0 #bf8f00; transition: 0.2s; }
+        /* Thống kê & Nút chức năng */
+        .control-panel { flex: 0.7; background: var(--glass); border-radius: 25px; border: 1px solid var(--gold); padding: 25px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+        .count-box { font-size: 4rem; font-weight: 900; color: var(--gold); margin: 10px 0; }
+        .btn-mega { width: 100%; padding: 20px; font-size: 1.5rem; font-weight: 900; background: linear-gradient(to bottom, #ffd700, #ffa000); color: #4a0019; border: none; border-radius: 20px; cursor: pointer; box-shadow: 0 8px 0 #bf8f00; }
         .btn-mega:active { transform: translateY(4px); box-shadow: 0 4px 0 #bf8f00; }
-        .btn-mega:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        
+        .btn-reset { 
+            background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.4); 
+            padding: 8px; border-radius: 10px; cursor: pointer; font-size: 0.7rem; margin-top: 20px; transition: 0.3s;
+        }
+        .btn-reset:hover { border-color: #f44336; color: #f44336; background: rgba(244, 67, 54, 0.1); }
     </style>
 </head>
 <body>
@@ -45,13 +50,12 @@
 <div class="layout">
     <div class="score-panel">
         <h3 style="color: var(--gold); margin-top: 0; text-align: center;">📊 ĐIỂM TRUNG BÌNH CÁC TỔ</h3>
-        <div id="groupList">
-            </div>
+        <div id="groupList"></div>
     </div>
 
     <div class="draw-panel">
         <div class="lucky-title">🎁 GIẢI ĐẶC BIỆT 🎁</div>
-        <div class="slot-group" id="slots">
+        <div class="slot-group">
             <div id="s1" class="slot">0</div>
             <div id="s2" class="slot">0</div>
             <div id="s3" class="slot">0</div>
@@ -63,15 +67,17 @@
     </div>
 
     <div class="control-panel">
-        <div style="font-size: 1rem; color: #aaa;">TỔNG NGƯỜI BÌNH CHỌN</div>
-        <div class="count-box" id="countUser">0</div>
-        <button class="btn-mega" id="spinBtn" onclick="startDraw()">QUAY SỐ</button>
-        <p style="font-size: 0.8rem; color: #777; margin-top: 30px;">* Hệ thống tự động tính trung bình<br>từ dữ liệu thực tế.</p>
+        <div>
+            <div style="font-size: 0.9rem; color: #aaa;">TỔNG NGƯỜI BÌNH CHỌN</div>
+            <div class="count-box" id="countUser">0</div>
+            <button class="btn-mega" id="spinBtn" onclick="startDraw()">QUAY SỐ</button>
+        </div>
+        
+        <button class="btn-reset" onclick="resetSystemData()">XÓA DỮ LIỆU & BẮT ĐẦU LẠI</button>
     </div>
 </div>
 
 <script>
-    // 1. Cấu hình Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCZs0sGNdMxeS9cL_g9HeMf1LOlxzOUKf4",
         authDomain: "chamtn-26e8f.firebaseapp.com",
@@ -80,49 +86,40 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. Danh sách 7 Tổ
     const groups = ["Văn phòng-Sử Địa", "Tiếng Anh", "Văn", "Toán", "Lý-CN", "Hóa-Sinh", "Tin KTPL-TDQP"];
     const winSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3");
     let totalParticipants = 0;
 
-    // 3. Khởi tạo Giao diện bảng điểm
     function initUI() {
         const gList = document.getElementById('groupList');
-        gList.innerHTML = ""; // Xóa dữ liệu cũ nếu có
+        gList.innerHTML = "";
         groups.forEach(g => {
             gList.innerHTML += `
                 <div class="group-item">
                     <div class="group-name">${g}</div>
                     <div class="score-value" id="score-${g}">0.0</div>
                 </div>`;
-            
-            // Lắng nghe điểm số realtime
             db.collection("points").doc(g).onSnapshot(doc => {
-                renderScore(g, doc.exists ? doc.data().score : 0);
+                const total = (doc.exists && doc.data().score) ? doc.data().score : 0;
+                const avg = totalParticipants > 0 ? (total / totalParticipants).toFixed(1) : "0.0";
+                const el = document.getElementById(`score-${g}`);
+                if(el) el.innerText = avg;
             });
         });
     }
 
-    // 4. Hàm tính và hiển thị điểm trung bình
-    function renderScore(groupName, totalScore) {
-        const avg = totalParticipants > 0 ? (totalScore / totalParticipants).toFixed(1) : "0.0";
-        const el = document.getElementById(`score-${groupName}`);
-        if (el) el.innerText = avg;
-    }
-
-    // 5. Lắng nghe tổng số người tham gia
     db.collection("participants_83").onSnapshot(snap => {
         totalParticipants = snap.size;
         document.getElementById('countUser').innerText = totalParticipants;
-        
-        // Cập nhật lại toàn bộ bảng điểm khi có người mới (thay đổi mẫu số)
         groups.forEach(async (g) => {
             const doc = await db.collection("points").doc(g).get();
-            renderScore(g, doc.exists ? doc.data().score : 0);
+            const total = (doc.exists && doc.data().score) ? doc.data().score : 0;
+            const avg = totalParticipants > 0 ? (total / totalParticipants).toFixed(1) : "0.0";
+            const el = document.getElementById(`score-${g}`);
+            if(el) el.innerText = avg;
         });
     });
 
-    // 6. Logic Quay số Giải Đặc Biệt
     async function startDraw() {
         const snap = await db.collection("participants_83").get();
         if(snap.size < 1) return alert("Chưa có ai tham gia bình chọn!");
@@ -131,7 +128,6 @@
         const list = snap.docs.map(d => d.data());
         const winner = list[Math.floor(Math.random() * list.length)];
 
-        // Gửi lệnh quay đồng bộ cho máy người chơi
         await db.collection("system_status").doc("current_draw").set({
             status: "SPINNING",
             winners: [winner],
@@ -140,7 +136,6 @@
 
         document.getElementById('winnerName').innerText = "ĐANG TÌM CHỦ NHÂN...";
 
-        // Chạy hiệu ứng quay 6 lồng số
         for(let s=1; s<=6; s++) {
             const el = document.getElementById(`s${s}`);
             el.classList.add('spinning');
@@ -156,12 +151,39 @@
         document.getElementById('winnerName').innerText = winner.name;
         winSound.play();
         confetti({ particleCount: 400, spread: 120, origin: { y: 0.6 } });
-        
         document.getElementById('spinBtn').disabled = false;
         await db.collection("system_status").doc("current_draw").update({ status: "DONE" });
     }
 
-    // Chạy khởi tạo ngay khi load trang
+    // HÀM XÓA DỮ LIỆU
+    async function resetSystemData() {
+        const pass = prompt("Nhập mật khẩu để xóa (Gợi ý: 83):");
+        if(pass !== "83") return alert("Mật khẩu sai!");
+
+        if(confirm("Hành động này sẽ xóa toàn bộ người tham gia và điểm số. Bạn chắc chắn chứ?")) {
+            try {
+                // 1. Xóa người tham gia
+                const participants = await db.collection("participants_83").get();
+                const batch = db.batch();
+                participants.docs.forEach(doc => batch.delete(doc.ref));
+                
+                // 2. Reset điểm các tổ về 0
+                groups.forEach(g => {
+                    batch.set(db.collection("points").doc(g), { score: 0 });
+                });
+
+                // 3. Reset trạng thái quay số
+                batch.delete(db.collection("system_status").doc("current_draw"));
+
+                await batch.commit();
+                alert("Đã reset hệ thống thành công!");
+                location.reload();
+            } catch (e) {
+                alert("Lỗi khi xóa: " + e.message);
+            }
+        }
+    }
+
     initUI();
 </script>
 </body>
